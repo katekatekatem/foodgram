@@ -10,6 +10,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+PARENT_DIR = os.path.join(BASE_DIR, '..')
+
+
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', False) == 'True'
@@ -25,10 +28,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'djoser',
+    'rest_framework.authtoken',
+    'django_filters',
     'api',
     'recipes',
     'users',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -65,8 +70,8 @@ WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'django'),
-        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'NAME': os.getenv('POSTGRES_DB', 'postgres'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', 5432)
@@ -117,29 +122,31 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 
-    'DEFAULT_AUTHENTICATIOsN_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 6,
+
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
 
-SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=14),
-   'AUTH_HEADER_TYPES': ('Bearer',),
-} 
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    # 'SERIALIZERS': {
+    #     'set_password': 'djoser.serializers.CustomSetPasswordSerializer',
+    # }
+}
 
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+RESERVED_USERNAMES = ['me']
 
-EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'send_mail')
-
-DEFAULT_FROM_EMAIL = 'email@email.ru'
+SILENCED_SYSTEM_CHECKS = ['models.E006']
 
 
 NAME_LENGTH = 200

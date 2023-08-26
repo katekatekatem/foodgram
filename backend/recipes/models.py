@@ -1,10 +1,8 @@
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models.constraints import UniqueConstraint
 
-User = get_user_model()
+from users.models import CustomUser
 
 
 class Recipe(models.Model):
@@ -13,7 +11,7 @@ class Recipe(models.Model):
     name = models.CharField(max_length=settings.NAME_LENGTH)
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        CustomUser,
         on_delete=models.CASCADE,
         related_name='recipes',
     )
