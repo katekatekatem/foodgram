@@ -5,20 +5,27 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes import models
-from users.models import CustomUser
+from users.models import CustomUser, Subscription
 from users.validators import names_validator_reserved, symbols_validator
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    # is_subscribed = serializers.SerializerMethodField()
+
+    # def get_is_subscribed(self, author):
+    #     user = self.context['request'].user
+    #     if user.is_anonymous:
+    #         return False
+    #     return Subscription.objects.filter(subscriber=user, author=author).exists()
 
     class Meta:
         model = CustomUser
         fields = (
-            'id', 'username', 'email', 'first_name',
-            'last_name', 'is_subscribed',
+            'id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed',
         )
 
 
@@ -39,10 +46,42 @@ class UserRegistrationSerializer(UserCreateSerializer):
 
     class Meta(UserCreateSerializer.Meta):
         model = CustomUser
+        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+
+
+class RecipeShortSerializer(serializers.ModelSerializer):
+    image = serializers.ReadOnlyField(source='image.url')
+
+    class Meta:
+        model = models.Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
         fields = (
-            'email', 'username', 'first_name',
-            'last_name', 'password',
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count',
         )
+
+    def get_is_subscribed(self, author):
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return Subscription.objects.filter(subscriber=user, author=author).exists()
+
+    def get_recipes(self, instance):
+        queryset = models.Recipe.objects.filter(author__id=instance.id)
+        return RecipeShortSerializer(queryset, many=True).data
+
+    def get_recipes_count(self, instance):
+        queryset = models.Recipe.objects.filter(author__id=instance.id)
+        return queryset.count()
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -82,30 +121,36 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug')
 
 
-class Base64ImageField(serializers.ImageField):
-
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-        return super().to_internal_value(data)
-
-
 class RecipeReadSerializer(serializers.ModelSerializer):
     ingredients = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
-    image = Base64ImageField()
+    image = serializers.ReadOnlyField(source='image.url')
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Recipe
-        fields = '__all__'
+        exclude = ('pub_date',)
 
     def get_ingredients(self, obj):
         ingredients = models.RecipeIngredient.objects.filter(recipe=obj)
         serializer = RecipeIngredientSerializer(ingredients, many=True)
         return serializer.data
+
+    def get_is_favorited(self, recipe):
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return models.Favorite.objects.filter(user=user, recipe=recipe).exists()
+
+    def get_is_in_shopping_cart(self, recipe):
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return models.Shopping_cart.objects.filter(
+            user_to_buy=user, recipe_to_buy=recipe
+        ).exists()
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -115,7 +160,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         many=True,
     )
     author = CustomUserSerializer(read_only=True)
-    image = Base64ImageField()
+    image = serializers.ReadOnlyField(source='image.url')
+    # image = BaseImage64???
 
     class Meta:
         model = models.Recipe

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.constraints import UniqueConstraint
 
 from users.models import CustomUser
 
@@ -28,9 +29,10 @@ class Recipe(models.Model):
     tags = models.ManyToManyField('Tag', through='RecipeTag')
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
+    pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -100,3 +102,57 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return f'{self.recipe} {self.ingredient} {self.amount}'
+
+
+class Favorite(models.Model):
+    """Модель избранного."""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='user',
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='recipe',
+    )
+
+    class Meta:
+        ordering = ('user__username',)
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user&recipe',
+            )
+        ]
+
+    def __str__(self):
+        return f'Пользователь {self.user}, рецепт {self.recipe}'
+
+
+class Shopping_cart(models.Model):
+    """Модель списка покупок."""
+
+    user_to_buy = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='user_to_buy',
+    )
+    recipe_to_buy = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='recipe_to_buy',
+    )
+
+    class Meta:
+        ordering = ('user_to_buy__username',)
+        constraints = [
+            UniqueConstraint(
+                fields=['user_to_buy', 'recipe_to_buy'],
+                name='unique_user_to_buy&recipe_to_buy',
+            )
+        ]
+
+    def __str__(self):
+        return f'Пользователь {self.user_to_buy}, рецепт {self.recipe_to_buy}'

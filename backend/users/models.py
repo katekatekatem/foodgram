@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 
 from .validators import names_validator_reserved, symbols_validator
 
@@ -54,3 +55,34 @@ class CustomUser(AbstractUser):
     @property
     def is_admin(self):
         return self.is_staff or self.role == ADMIN or self.is_superuser
+
+
+class Subscription(models.Model):
+    """Модель подписок."""
+
+    subscriber = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='subscriber',
+    )
+    author = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='author',
+    )
+
+    class Meta:
+        ordering = ('subscriber__username',)
+        constraints = [
+            UniqueConstraint(
+                fields=['subscriber', 'author'],
+                name='unique_subscriber&author',
+            ),
+            CheckConstraint(
+                check=~models.Q(subscriber=models.F('author')),
+                name='users_cannot_subscribe_to_themselves'
+            ),
+        ]
+
+    def __str__(self):
+        return f'Подписчик {self.subscriber}, автор {self.author}'
