@@ -1,13 +1,6 @@
 from rest_framework import permissions
 
 
-class IsAdminPermission(permissions.BasePermission):
-    """Права для работы с пользователями."""
-
-    def has_permission(self, request, _):
-        return request.user.is_authenticated and request.user.is_admin
-
-
 class IsAdminOrReadOnlyPermission(permissions.BasePermission):
     """Права для работы с ингредиентами и тегами."""
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import (Ingredient, Recipe, RecipeIngredient,
-                     RecipeTag, Tag)
+from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
+                     RecipeTag, Shopping_cart, Tag)
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -16,33 +16,61 @@ class RecipeTagInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = (
+    list_display = [
         'id',
         'name',
         'author',
-        # 'is_favorited_sum',
-    )
+        'pub_date',
+        'is_favorited_sum',
+    ]
     search_fields = ('name',)
     list_filter = ('name', 'author', 'tags')
     empty_value_display = '-пусто-'
     inlines = (RecipeTagInline, RecipeIngredientInline)
 
-    # def is_favorited_sum(self, request):
-    #     current_recipe_is_favorited = Recipe.objects.filter(
-    #         recipe__id=request.id).values_list('is_favorited', flat=True)
-    #     total_amount = sum(current_recipe_is_favorited)
-    #     return total_amount
+    def is_favorited_sum(self, request):
+        current_recipe_is_favorited = Favorite.objects.filter(
+            recipe__id=request.id)
+        is_favorited_sum = len(current_recipe_is_favorited)
+        return is_favorited_sum
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'measurement_unit']
+    list_display = ['id', 'name', 'measurement_unit']
     search_fields = ('name',)
     list_filter = ('name',)
     empty_value_display = '-пусто-'
 
 
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ['recipe', 'ingredient', 'amount']
+    search_fields = ('recipe', 'ingredient')
+    list_filter = ('recipe', 'ingredient')
+    empty_value_display = '-пусто-'
+
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ['id', 'name', 'slug', 'color']
+    empty_value_display = '-пусто-'
+
+
+@admin.register(RecipeTag)
+class RecipeTagAdmin(admin.ModelAdmin):
+    list_display = ['recipe', 'tag']
+    list_filter = ('tag',)
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ['user', 'recipe']
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Shopping_cart)
+class Shopping_cartAdmin(admin.ModelAdmin):
+    list_display = ['user_to_buy', 'recipe_to_buy']
     empty_value_display = '-пусто-'

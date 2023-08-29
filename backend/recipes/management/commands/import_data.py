@@ -1,9 +1,7 @@
 import csv
-import os
 
 from django.core.management.base import BaseCommand
 
-from foodgram_backend.settings import PARENT_DIR
 from recipes.models import Ingredient
 
 
@@ -15,7 +13,6 @@ class Command(BaseCommand):
             'csv_file',
             type=str,
             nargs='?',
-            # default=os.path.join(PARENT_DIR, 'data', 'ingredients.csv'),
             default='/app/data/ingredients.csv',
             help='Путь до CSV файла',
         )

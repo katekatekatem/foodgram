@@ -1,6 +1,17 @@
-from rest_framework import filters, mixins, viewsets
+from rest_framework import mixins, viewsets
 
 from .permissions import IsAdminOrReadOnlyPermission
+
+
+class ListRetriveCreateViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Миксины для пользователей."""
+
+    pass
 
 
 class ListRetriveCreateDestroyViewSet(
@@ -10,7 +21,7 @@ class ListRetriveCreateDestroyViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    filter_backends = (filters.SearchFilter,)
+    """Миксины для тегов и ингредиентов."""
+
     permission_classes = (IsAdminOrReadOnlyPermission,)
-    search_fields = ('name',)
-    # lookup_field = 'slug'
+    pagination_class = None

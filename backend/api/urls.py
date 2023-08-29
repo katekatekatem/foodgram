@@ -17,6 +17,11 @@ registration_urls = [
         UserViewSet.as_view({'post': 'set_password'}),
         name='set_password',
     ),
+    path(
+        'users/me/',
+        UserViewSet.as_view({'get': 'me'}),
+        name='me',
+    ),
 ]
 
 urlpatterns = [

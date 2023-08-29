@@ -9,9 +9,6 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-PARENT_DIR = os.path.join(BASE_DIR, '..')
-
-
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', False) == 'True'
@@ -130,6 +127,9 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'current_user': 'api.serializers.CustomUserSerializer',
+    },
 }
 
 

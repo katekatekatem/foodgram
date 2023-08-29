@@ -35,6 +35,12 @@ class Recipe(models.Model):
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+        constraints = [
+            UniqueConstraint(
+                fields=['name', 'text'],
+                name='name&text',
+            )
+        ]
 
     def __str__(self):
         return self.name[:settings.STR_LENGTH]
@@ -67,6 +73,11 @@ class RecipeTag(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
+    class Meta:
+        ordering = ['recipe']
+        verbose_name = 'Рецепты и теги'
+        verbose_name_plural = 'Рецепты и теги'
+
     def __str__(self):
         return f'{self.recipe} {self.tag}'
 
@@ -83,6 +94,12 @@ class Ingredient(models.Model):
         ordering = ['name']
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        constraints = [
+            UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='name&measurement_unit',
+            )
+        ]
 
     def __str__(self):
         return self.name[:settings.STR_LENGTH]
@@ -99,6 +116,11 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField(
         validators=[MinValueValidator(1)]
     )
+
+    class Meta:
+        ordering = ('recipe',)
+        verbose_name = 'Рецепты и ингредиенты'
+        verbose_name_plural = 'Рецепты и ингредиенты'
 
     def __str__(self):
         return f'{self.recipe} {self.ingredient} {self.amount}'
@@ -120,6 +142,8 @@ class Favorite(models.Model):
 
     class Meta:
         ordering = ('user__username',)
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
         constraints = [
             UniqueConstraint(
                 fields=['user', 'recipe'],
@@ -147,6 +171,8 @@ class Shopping_cart(models.Model):
 
     class Meta:
         ordering = ('user_to_buy__username',)
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Список покупок'
         constraints = [
             UniqueConstraint(
                 fields=['user_to_buy', 'recipe_to_buy'],
