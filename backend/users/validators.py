@@ -1,7 +1,8 @@
 import re
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
+
+from foodgram_backend.constants import RESERVED_USERNAMES
 
 
 def symbols_validator(value):
@@ -14,7 +15,7 @@ def symbols_validator(value):
 
 def names_validator_reserved(value):
     MESSAGE = 'Невозможно использовать {} в качестве имени пользователя.'
-    for reserved_username in settings.RESERVED_USERNAMES:
+    for reserved_username in RESERVED_USERNAMES:
         if value == reserved_username:
             raise ValidationError(MESSAGE.format(value))
     return value

@@ -1,13 +1,14 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import CustomUser, Subscription
 
 
 @admin.register(CustomUser)
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'role')
+class CustomUserAdmin(UserAdmin):
+    list_display = ('id', 'username', 'email')
     search_fields = ('username',)
-    list_filter = ('username', 'email', 'role')
+    list_filter = ('username', 'email')
     empty_value_display = '-пусто-'
 
 

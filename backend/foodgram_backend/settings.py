@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'django_filters',
+    'colorfield',
     'api',
     'recipes',
     'users',
@@ -135,22 +136,4 @@ DJOSER = {
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-
-RESERVED_USERNAMES = ['me']
-
 SILENCED_SYSTEM_CHECKS = ['models.E006']
-
-
-NAME_LENGTH = 200
-
-TAG_SLUG_LENGTH = 30
-
-TAG_COLOR_LENGTH = 7
-
-STR_LENGTH = 30
-
-RECIPES_ON_PAGE = 6
-
-USERNAME_LENGHT = 150
-
-EMAIL_LENGHT = 254

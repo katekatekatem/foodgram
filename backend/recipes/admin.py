@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.models import Group
+from rest_framework.authtoken.models import TokenProxy
 
 from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
                      RecipeTag, Shopping_cart, Tag)
@@ -6,11 +8,13 @@ from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
+    min_num = 1
     extra = 1
 
 
 class RecipeTagInline(admin.TabularInline):
     model = RecipeTag
+    min_num = 1
     extra = 1
 
 
@@ -74,3 +78,7 @@ class FavoriteAdmin(admin.ModelAdmin):
 class Shopping_cartAdmin(admin.ModelAdmin):
     list_display = ['user_to_buy', 'recipe_to_buy']
     empty_value_display = '-пусто-'
+
+
+admin.site.unregister(Group)
+admin.site.unregister(TokenProxy)

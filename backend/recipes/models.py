@@ -1,15 +1,17 @@
-from django.conf import settings
-from django.core.validators import MinValueValidator
+from colorfield.fields import ColorField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 
+from foodgram_backend.constants import (NAME_LENGTH, STR_LENGTH,
+                                        TAG_SLUG_LENGTH)
 from users.models import CustomUser
 
 
 class Recipe(models.Model):
     """Модель рецептов."""
 
-    name = models.CharField(max_length=settings.NAME_LENGTH)
+    name = models.CharField(max_length=NAME_LENGTH)
     text = models.TextField()
     author = models.ForeignKey(
         CustomUser,
@@ -19,16 +21,14 @@ class Recipe(models.Model):
     image = models.ImageField(
         upload_to='recipes/images/',
     )
-    cooking_time = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)]
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(3000)]
     )
     ingredients = models.ManyToManyField(
         'Ingredient',
         through='RecipeIngredient',
     )
     tags = models.ManyToManyField('Tag', through='RecipeTag')
-    is_favorited = models.BooleanField(default=False)
-    is_in_shopping_cart = models.BooleanField(default=False)
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -43,20 +43,18 @@ class Recipe(models.Model):
         ]
 
     def __str__(self):
-        return self.name[:settings.STR_LENGTH]
+        return self.name[:STR_LENGTH]
 
 
 class Tag(models.Model):
     """Модель тегов."""
 
-    name = models.CharField(max_length=settings.NAME_LENGTH)
+    name = models.CharField(max_length=NAME_LENGTH)
     slug = models.SlugField(
-        max_length=settings.TAG_SLUG_LENGTH,
+        max_length=TAG_SLUG_LENGTH,
         unique=True,
     )
-    color = models.CharField(
-        max_length=settings.TAG_COLOR_LENGTH
-    )
+    color = ColorField()
 
     class Meta:
         ordering = ['name']
@@ -64,7 +62,7 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
 
     def __str__(self):
-        return self.name[:settings.STR_LENGTH]
+        return self.name[:STR_LENGTH]
 
 
 class RecipeTag(models.Model):
@@ -85,9 +83,9 @@ class RecipeTag(models.Model):
 class Ingredient(models.Model):
     """Модель ингредиентов."""
 
-    name = models.CharField(max_length=settings.NAME_LENGTH)
+    name = models.CharField(max_length=NAME_LENGTH)
     measurement_unit = models.CharField(
-        max_length=settings.NAME_LENGTH
+        max_length=NAME_LENGTH
     )
 
     class Meta:
@@ -102,7 +100,7 @@ class Ingredient(models.Model):
         ]
 
     def __str__(self):
-        return self.name[:settings.STR_LENGTH]
+        return self.name[:STR_LENGTH]
 
 
 class RecipeIngredient(models.Model):
@@ -113,8 +111,8 @@ class RecipeIngredient(models.Model):
         Ingredient,
         on_delete=models.CASCADE,
     )
-    amount = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)]
+    amount = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10000)]
     )
 
     class Meta:
