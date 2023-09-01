@@ -32,11 +32,6 @@ class UserViewSet(mixins.ListModelMixin,
         return serializers.CustomUserSerializer
 
     def get_permissions(self):
-        # Комментарий: Проверь эндпоинт api/users/{id}/.
-        # Неавторизованному возвращает 401. По спеке доступно всем.
-        # Ответ: В api/docs/ стоит 401, после обновления описания
-        # диплома в задании написано, что доступно должно быть
-        # неавторизованным. Могу оставить 401 как в доке?
         if self.action == 'create' or self.action == 'list':
             permission_classes = (permissions.AllowAny,)
         else:
@@ -54,21 +49,18 @@ class UserViewSet(mixins.ListModelMixin,
         author = get_object_or_404(CustomUser, pk=pk)
 
         if self.request.method == 'POST':
-            if subscriber == author:
-                raise exceptions.ValidationError(
-                    'Невозможно подписаться на самого себя.'
-                )
-            if Subscription.objects.filter(
-                subscriber=subscriber,
-                author=author
-            ).exists():
-                raise exceptions.ValidationError('Подписка уже существует.')
-            serializer = serializers.SubscribeSerializer(
+            data = {'subscriber': subscriber.id, 'author': author.id}
+            serializer = serializers.SubscriptionSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            second_serializer = serializers.SubscribeSerializer(
                 author,
-                context={'request': request}
+                context={'request': request},
             )
-            Subscription.objects.create(subscriber=subscriber, author=author)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                second_serializer.data,
+                status=status.HTTP_201_CREATED
+            )
 
         if self.request.method == 'DELETE':
             subscription = get_object_or_404(
@@ -77,7 +69,7 @@ class UserViewSet(mixins.ListModelMixin,
                 author=author,
             )
             deleted_objects_count, _ = subscription.delete()
-            if deleted_objects_count == 0:
+            if not deleted_objects_count:
                 raise exceptions.ValidationError(
                     'Такой подписки не существует.'
                 )
@@ -127,20 +119,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return serializers.RecipeCreateSerializer
         return serializers.RecipeReadSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-    def additional_post(self, request, pk, Serializer, Model):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        data = {'user': user.id, 'recipe': recipe.id}
-        serializer = Serializer(
-            data=data,
-            context={'request': request}
+    @staticmethod
+    def fav_or_shop_cart_post(serializer, data, recipe):
+        serializer = serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        second_serializer = serializers.RecipeShortSerializer(recipe)
+        return Response(
+            second_serializer.data,
+            status=status.HTTP_201_CREATED
         )
-        if serializer.is_valid():
-            Model.objects.get_or_create(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def save_to_text_file(self, buy_list):
         final_buy_list = {}
@@ -175,47 +163,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         user = request.user
         recipe = get_object_or_404(Recipe, pk=pk)
+
         if self.request.method == 'POST':
-            if Favorite.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Этот рецепт уже в избранном.'
-                )
             data = {'user': user.id, 'recipe': recipe.id}
-            serializer = serializers.FavoriteSerializer(
-                data=data,
-                context={'request': request}
+            return self.fav_or_shop_cart_post(
+                serializers.FavoriteSerializer,
+                data,
+                recipe,
             )
-            if serializer.is_valid():
-                Favorite.objects.get_or_create(user=user, recipe=recipe)
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
 
         if self.request.method == 'DELETE':
-            if not Favorite.objects.filter(
-                user=user,
-                recipe=recipe,
-            ).exists():
-                raise exceptions.ValidationError('Этот рецепт не в избранном.')
             favorite = get_object_or_404(
                 Favorite,
                 user=user,
                 recipe=recipe,
             )
-            favorite.delete()
+            deleted_objects_count, _ = favorite.delete()
+            if not deleted_objects_count:
+                raise exceptions.ValidationError(
+                    'Этот рецепт не в избранном.'
+                )
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # почему-то не работает
-    # ошибка Method 'delete' has already been mapped to '.favorite'.
-    # @favorite.mapping.delete
-    # def favorite(self, request, pk):
-    #     user = request.user
-    #     recipe = get_object_or_404(Recipe, pk=pk)
-    #     return get_object_or_404(Favorite, user=user, recipe=recipe)
 
     @action(
         methods=['POST', 'DELETE'],
@@ -228,42 +196,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if self.request.method == 'POST':
-            if Shopping_cart.objects.filter(
-                user_to_buy=user,
-                recipe_to_buy=recipe
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Этот рецепт уже в списке покупок.'
-                )
             data = {'user_to_buy': user.id, 'recipe_to_buy': recipe.id}
-            serializer = serializers.ShoppingCartSerializer(
-                data=data,
-                context={'request': request}
+            return self.fav_or_shop_cart_post(
+                serializers.ShoppingCartSerializer,
+                data,
+                recipe,
             )
-            if serializer.is_valid():
-                Shopping_cart.objects.get_or_create(
-                    user_to_buy=user,
-                    recipe_to_buy=recipe
-                )
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
 
         if self.request.method == 'DELETE':
-            if not Shopping_cart.objects.filter(
-                user_to_buy=user,
-                recipe_to_buy=recipe,
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Этот рецепт не в списке покупок.'
-                )
             shopping_cart = get_object_or_404(
                 Shopping_cart,
                 user_to_buy=user,
                 recipe_to_buy=recipe,
             )
-            shopping_cart.delete()
+            deleted_objects_count, _ = shopping_cart.delete()
+            if not deleted_objects_count:
+                raise exceptions.ValidationError(
+                    'Этот рецепт не в списке покупок.'
+                )
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -280,5 +230,4 @@ class RecipeViewSet(viewsets.ModelViewSet):
         buy_list = RecipeIngredient.objects.filter(
             recipe__in=recipes
         ).values('ingredient').annotate(amount=Sum('amount'))
-        response = self.save_to_text_file(buy_list)
-        return response
+        return self.save_to_text_file(buy_list)

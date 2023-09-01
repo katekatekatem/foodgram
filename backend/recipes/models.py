@@ -3,7 +3,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 
-from foodgram_backend.constants import (NAME_LENGTH, STR_LENGTH,
+from foodgram_backend.constants import (MAX_AMOUNT, MAX_COOKING_TIME, MIN,
+                                        NAME_LENGTH, STR_LENGTH,
                                         TAG_SLUG_LENGTH)
 from users.models import CustomUser
 
@@ -22,7 +23,10 @@ class Recipe(models.Model):
         upload_to='recipes/images/',
     )
     cooking_time = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(3000)]
+        validators=[
+            MinValueValidator(MIN),
+            MaxValueValidator(MAX_COOKING_TIME)
+        ]
     )
     ingredients = models.ManyToManyField(
         'Ingredient',
@@ -112,7 +116,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10000)]
+        validators=[MinValueValidator(MIN), MaxValueValidator(MAX_AMOUNT)]
     )
 
     class Meta:

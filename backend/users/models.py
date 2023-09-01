@@ -24,13 +24,13 @@ class CustomUser(AbstractUser):
     last_name = models.CharField(
         max_length=USERNAME_LENGHT
     )
+    # Переопределяю пароль из-за ограничения по его длине в доке
     password = models.CharField(
-        max_length=USERNAME_LENGHT
+        max_length=USERNAME_LENGHT,
     )
-    is_subscribed = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'username', 'password']
 
     class Meta(AbstractUser.Meta):
         ordering = ('username',)

@@ -1,12 +1,13 @@
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from foodgram_backend.constants import USERNAME_LENGHT
+from foodgram_backend.constants import (MAX_AMOUNT, MAX_COOKING_TIME,
+                                        MIN)
 from recipes import models
 from users.models import CustomUser, Subscription
-from users.validators import names_validator_reserved, symbols_validator
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -18,7 +19,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return bool(
             self.context['request']
-            and not user.is_anonymous
+            and user.is_authenticated
             and obj.author.filter(subscriber=user).exists()
         )
 
@@ -33,20 +34,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(UserCreateSerializer):
     """Сериализатор для регистрации пользователей."""
 
-    username = serializers.CharField(
-        max_length=USERNAME_LENGHT,
-        required=True,
-        validators=[symbols_validator, names_validator_reserved],
-    )
-    email = serializers.EmailField(required=True)
-    password = serializers.CharField(
-        max_length=USERNAME_LENGHT,
-        required=True,
-    )
-
-    class Meta(UserCreateSerializer.Meta):
+    class Meta:
         model = CustomUser
-        fields = ('email', 'username', 'first_name', 'last_name', 'id')
+        exclude = ('last_login', 'is_staff', 'is_superuser', 'groups',
+                   'is_active', 'date_joined', 'user_permissions')
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -137,7 +128,7 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
         source='ingredient__id',
     )
     id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=1, max_value=10000)
+    amount = serializers.IntegerField(min_value=MIN, max_value=MAX_AMOUNT)
 
     class Meta:
         model = models.RecipeIngredient
@@ -173,7 +164,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return bool(
             self.context['request']
-            and not user.is_anonymous
+            and user.is_authenticated
             and obj.recipe.filter(user=user).exists()
         )
 
@@ -181,7 +172,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return bool(
             self.context['request']
-            and not user.is_anonymous
+            and user.is_authenticated
             and obj.recipe_to_buy.filter(user_to_buy=user).exists()
         )
 
@@ -196,7 +187,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
-    cooking_time = serializers.IntegerField(min_value=1, max_value=3000)
+    cooking_time = serializers.IntegerField(
+        min_value=MIN,
+        max_value=MAX_COOKING_TIME
+    )
 
     class Meta:
         model = models.Recipe
@@ -229,17 +223,22 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return data
 
-    def recipeingredient_create(self, recipe, ingredients):
+    @staticmethod
+    def recipeingredient_create(recipe, ingredients):
         data = (
             models.RecipeIngredient(
                 recipe=recipe,
                 amount=ingredient['amount'],
-                ingredient=models.Ingredient.objects.get(id=ingredient['id']),
+                ingredient=get_object_or_404(
+                    models.Ingredient,
+                    pk=ingredient['id']
+                ),
             ) for ingredient in ingredients
         )
         models.RecipeIngredient.objects.bulk_create(data)
 
     def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = models.Recipe.objects.create(**validated_data)
