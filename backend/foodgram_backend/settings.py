@@ -126,12 +126,12 @@ REST_FRAMEWORK = {
 }
 
 
-# DJOSER = {
-#     'LOGIN_FIELD': 'email',
-#     'SERIALIZERS': {
-#         'current_user': 'api.serializers.CustomUserSerializer',
-#     },
-# }
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'current_user': 'api.serializers.CustomUserSerializer',
+    },
+}
 
 
 AUTH_USER_MODEL = 'users.CustomUser'

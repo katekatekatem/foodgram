@@ -24,7 +24,6 @@ class CustomUser(AbstractUser):
     last_name = models.CharField(
         max_length=USERNAME_LENGHT
     )
-    # Переопределяю пароль из-за ограничения по его длине в доке
     password = models.CharField(
         max_length=USERNAME_LENGHT,
     )

@@ -1,11 +1,10 @@
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from foodgram_backend.constants import (MAX_AMOUNT, MAX_COOKING_TIME,
-                                        MIN)
+                                        MIN_AMOUNT, MIN_COOKING_TIME)
 from recipes import models
 from users.models import CustomUser, Subscription
 
@@ -36,8 +35,10 @@ class UserRegistrationSerializer(UserCreateSerializer):
 
     class Meta:
         model = CustomUser
-        exclude = ('last_login', 'is_staff', 'is_superuser', 'groups',
-                   'is_active', 'date_joined', 'user_permissions')
+        fields = (
+            'id', 'username', 'email', 'first_name',
+            'last_name', 'password',
+        )
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -127,8 +128,10 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
         queryset=models.Ingredient.objects.all(),
         source='ingredient__id',
     )
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=MIN, max_value=MAX_AMOUNT)
+    amount = serializers.IntegerField(
+        min_value=MIN_AMOUNT,
+        max_value=MAX_AMOUNT
+    )
 
     class Meta:
         model = models.RecipeIngredient
@@ -188,14 +191,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
     cooking_time = serializers.IntegerField(
-        min_value=MIN,
+        min_value=MIN_COOKING_TIME,
         max_value=MAX_COOKING_TIME
     )
 
     class Meta:
         model = models.Recipe
-        fields = ('name', 'text', 'ingredients', 'tags', 'image',
-                  'cooking_time', 'author')
+        fields = (
+            'name', 'text', 'ingredients', 'tags', 'image',
+            'cooking_time', 'author'
+        )
         validators = [
             UniqueTogetherValidator(
                 queryset=models.Recipe.objects.all(),
@@ -229,10 +234,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             models.RecipeIngredient(
                 recipe=recipe,
                 amount=ingredient['amount'],
-                ingredient=get_object_or_404(
-                    models.Ingredient,
-                    pk=ingredient['id']
-                ),
+                ingredient=ingredient['ingredient__id'],
             ) for ingredient in ingredients
         )
         models.RecipeIngredient.objects.bulk_create(data)
