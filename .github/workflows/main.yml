@@ -39,8 +39,7 @@ jobs:
         POSTGRES_DB: django_db
         DB_HOST: 127.0.0.1
         DB_PORT: 5432
-      run: |
-        python -m flake8 backend/
+      run: python -m flake8 backend/
 
   build_backend_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
@@ -113,7 +112,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
     - name: Copy docker-compose.production.yml via ssh
-      uses: appleboy/ssh-action@master
+      uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
