@@ -15,7 +15,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
   backend:
-    image: katekatekatem/foodgram_backend
+    image: katekatekatem/foodgram_backend:latest
     env_file: ./.env
     volumes:
       - static:/app/backend_static/
@@ -25,12 +25,12 @@ services:
       - db
 
   frontend:
-    image: katekatekatem/foodgram_frontend
+    image: katekatekatem/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
 
   nginx:
-    image: katekatekatem/foodgram_gateway
+    image: katekatekatem/foodgram_gateway:latest
     ports:
       - 7001:80
     volumes:
