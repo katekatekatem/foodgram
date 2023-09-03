@@ -19,14 +19,14 @@ services:
     volumes:
       - static:/app/backend_static/
       - media:/app/media/
-      - ../data:/app/data/
+      - ./data:/app/data/
     depends_on:
       - db
 
   frontend:
     image: katekatekatem/foodgram_frontend
     volumes:
-      - ../frontend/:/app/result_build/
+      - ./frontend/:/app/result_build/
 
   nginx:
     image: katekatekatem/foodgram_gateway
@@ -34,8 +34,8 @@ services:
       - 7001:80
     volumes:
       - ./nginx.conf:/etc/nginx/templates/default.conf.template
-      - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
+      - ./frontend/build:/usr/share/nginx/html/
+      - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/backend_static
       - media:/media
     depends_on:
