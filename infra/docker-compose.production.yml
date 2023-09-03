@@ -4,6 +4,7 @@ volumes:
   pg_data:
   static:
   media:
+  docs:
 
 services:
 
@@ -19,7 +20,8 @@ services:
     volumes:
       - static:/app/backend_static/
       - media:/app/media/
-      - redoc:/app/api/docs/
+      - docs:/app/api/docs/
+      - ../data:/app/data/
     depends_on:
       - db
 
@@ -35,7 +37,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/templates/default.conf.template
       - ../frontend/build:/usr/share/nginx/html/
-      - redoc:/api/docs/
+      - docs:/usr/share/nginx/html/api/docs/
       - static:/backend_static
       - media:/media
     depends_on:
