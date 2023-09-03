@@ -13,7 +13,7 @@ class Command(BaseCommand):
             'csv_file',
             type=str,
             nargs='?',
-            default='/app/data/ingredients.csv',
+            default='/app/recipes/data/ingredients.csv',
             help='Путь до CSV файла',
         )
 

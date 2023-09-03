@@ -5,6 +5,7 @@ volumes:
   static:
   media:
   docs:
+  data:
 
 services:
 
@@ -20,8 +21,8 @@ services:
     volumes:
       - static:/app/backend_static/
       - media:/app/media/
+      - data:/app/recipes/data/
       - docs:/app/api/docs/
-      - ../data:/app/data/
     depends_on:
       - db
 
@@ -40,6 +41,7 @@ services:
       - docs:/usr/share/nginx/html/api/docs/
       - static:/backend_static
       - media:/media
+      - data:/app/recipes/data
     depends_on:
       - backend
       - frontend
