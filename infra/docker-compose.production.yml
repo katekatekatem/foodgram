@@ -4,8 +4,8 @@ volumes:
   pg_data:
   static:
   media:
-  docs:
   data:
+  docs:
 
 services:
 
